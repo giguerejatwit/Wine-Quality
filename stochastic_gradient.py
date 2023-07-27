@@ -1,12 +1,27 @@
-import multiprocessing as mp
-import threading
 import time
-from multiprocessing import Process
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 from sklearn import preprocessing
 from sklearn.linear_model import LogisticRegression
+
+
+def logit(a):
+    log = 1.0 / (1.0 + np.exp(-a))
+    return log
+
+def linear(x, theta):
+    prod = np.dot(x, np.float64(theta))
+    return prod
+
+def cost_function(X, y, theta):
+    m = len(y)
+    h = logit(np.dot(X, theta))
+    cost = (-1 / m) * np.sum(y.reshape(-1, 1) * np.log(h) + (1 - y.reshape(-1, 1)) * np.log(1 - h))
+    return cost
 
 wine_data = pd.read_csv("winequality_red.csv", delimiter=",")
 
@@ -36,27 +51,18 @@ for i in range(num_cols):
 target = wine_data.iloc[idx, -1]
 
 
-# run a logistic regression
-logit = LogisticRegression(random_state=0)
-logit.fit(preprocessing.normalize(trainx), target)
-# predict regression
-pred = logit.predict(testx)
+# model a logisitic regression
+model = LogisticRegression(random_state=0)
+model.fit(preprocessing.normalize(trainx), target)
 
+# predict regression
+pred = model.predict(testx)
+
+# add a column of 1's
 x0 = np.ones(trainx.shape[0])
 x0t = np.ones(testx.shape[0])
-
 trainx = np.c_[x0, trainx]
 testx = np.c_[x0t, testx]
-
-
-
-def logit(a):
-    log = 1.0 / (1.0 + np.exp(-a))
-    return log
-
-def linear(x, theta):
-    prod = np.dot(x, np.float64(theta))
-    return prod
 
 dim = trainx.shape[0]
 theta = np.zeros(dim)
@@ -71,42 +77,72 @@ x = trainx[: , -13]
 
 
 start_time = time.time()
+
+costs = []
+errors = []
+thetas = []
+
 for i in range(1, 1000):
 
-     # loop over all of the data
+    # loop over all of the data
     for j in range(len(x)):
-        k = j
-        xx = x[int(k)]
-        yy = trainx[k, 12]
+        xx = x[int(j)]
+        yy = trainx[j, 12]
         a = linear(xx, theta)
+        
+        # gradient function
         hh2 = logit(a)
+        
+        # cost function
         const = yy - hh2
         theta = theta + alpha * const * xx
     
+    cost = cost_function(trainx, x, theta)
+    costs.append(cost)
+    
+    
+    thetas.append(theta)
+
     d = abs(theta1 - theta)
     err = np.max(d)
-    
+    errors.append(err)
 
-    if (err <= 1*10^-5):
+    if (err <= 1e-5):
         break
     else:
-         print(err)
+        print(err)
     theta1 = theta
 
-print(theta)
-
-
+# print(theta)
 
 end_time = time.time()
 
-
-
-# Predict on the test data
-
-
-# Print the coefficients and the mean squared error
-# print("Coefficients: ", model.coef_)
-# print("Mean squared error: ", mean_squared_error(test_data, y_pred))
-
 # Print the results
 print("Time taken:", end_time - start_time, "seconds")
+
+
+# ------ Plot Results --------
+
+# Plot the cost over iterations
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')   # Create the axes
+# Data
+# X = thetas
+
+
+# Y = errors
+# X, Y = np.meshgrid(X, Y)
+# Z = X**2 + Y**2
+# 
+# Plot the 3d surface
+# surface = ax.plot_surface(X, Y, Z,
+                        #   cmap=cm.coolwarm,
+                        #   rstride = 1,
+                        #   cstride = 1)
+# 
+# Set some labels
+# ax.set_xlabel('x-axis: Thetha')
+# ax.set_ylabel('y-axis: Error Correction')
+# ax.set_zlabel('Error: X^2 + Y^2')
+# 
+# plt.show()

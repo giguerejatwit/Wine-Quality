@@ -61,7 +61,7 @@ theta <- matrix(rnorm(dimm),nrow=1) #random initial guesses
 alpha=0.1
 theta1 <- theta
 x <- trainx[,-13]
-print(trainx[,-13])
+print(trainx[3,-13])
 nn2 <- integer()
 for (i in 1:100000){
   
